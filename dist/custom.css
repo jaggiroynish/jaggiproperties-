@@ -29,3 +29,8 @@
 .logout-button{border:1px solid #ffffff70;background:#ffffff24;color:white;border-radius:8px;padding:7px 10px;font:600 11px 'DM Sans',sans-serif;cursor:pointer;margin-left:auto}
 .sidebar-note small{overflow-wrap:anywhere;max-width:145px}
 @media(max-width:540px){.login-card{padding:30px 23px}}
+
+/* Login and signup choice */
+.login-help #auth-switch{appearance:none;border:0;background:transparent;color:#17a988;font:700 12px 'DM Sans',sans-serif;cursor:pointer;padding:3px}
+.login-help #auth-switch:hover{text-decoration:underline}
+#login-message.success{color:#16876a}
