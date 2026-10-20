@@ -73,3 +73,62 @@ logout.addEventListener('click', async () => {
     logout.disabled = false;
   }
 });
+
+const switchButton = document.createElement('button');
+switchButton.type = 'button';
+switchButton.id = 'auth-switch';
+switchButton.textContent = 'Create an account';
+const switchPrompt = document.createElement('span');
+switchPrompt.textContent = 'New here? ';
+const switchRow = document.createElement('p');
+switchRow.className = 'login-help';
+switchRow.append(switchPrompt, switchButton);
+form.after(switchRow);
+const confirmLabel = document.createElement('label');
+confirmLabel.htmlFor = 'signup-confirm';
+confirmLabel.textContent = 'Confirm password';
+const confirmInput = document.createElement('input');
+confirmInput.id = 'signup-confirm';
+confirmInput.type = 'password';
+confirmInput.autocomplete = 'new-password';
+confirmInput.placeholder = 'Re-enter password';
+const passwordInput = form.querySelector('[name="password"]');
+passwordInput.after(confirmLabel, confirmInput);
+let signupMode = false;
+function setSignupMode(enabled) {
+  signupMode = enabled;
+  confirmLabel.hidden = !enabled;
+  confirmInput.hidden = !enabled;
+  confirmInput.required = enabled;
+  submit.textContent = enabled ? 'Create account' : 'Sign in';
+  switchPrompt.textContent = enabled ? 'Already have an account? ' : 'New here? ';
+  switchButton.textContent = enabled ? 'Sign in' : 'Create an account';
+  notice('');
+}
+setSignupMode(false);
+switchButton.addEventListener('click', () => setSignupMode(!signupMode));
+form.addEventListener('submit', async event => {
+  if (!signupMode) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  if (!client) return;
+  const email = form.elements.email.value.trim();
+  const password = form.elements.password.value;
+  if (password.length < 8) { notice('Use a password with at least 8 characters.'); return; }
+  if (password !== confirmInput.value) { notice('Passwords do not match.'); return; }
+  submit.disabled = true;
+  submit.textContent = 'Creating account…';
+  try {
+    const { data, error } = await client.auth.signUp({ email, password });
+    if (error) throw error;
+    if (data.session?.user) showApp(data.session.user);
+    else {
+      setSignupMode(false);
+      notice('Account created. Check your email for a confirmation link, then sign in.');
+    }
+  } catch (error) { notice(error.message || 'Could not create account.'); }
+  finally {
+    submit.disabled = false;
+    submit.textContent = signupMode ? 'Create account' : 'Sign in';
+  }
+}, true);
