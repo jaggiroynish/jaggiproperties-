@@ -23,10 +23,12 @@
           <input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required>
           <label for="login-password">Password</label>
           <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+          <label for="signup-confirm" id="signup-confirm-label" hidden>Confirm password</label>
+          <input id="signup-confirm" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter your password" hidden>
           <p id="login-message" role="status" aria-live="polite"></p>
           <button type="submit">Sign in</button>
         </form>
-        <p class="login-help">Admin accounts are created in Supabase Authentication.</p>
+        <p class="login-help"><span id="auth-switch-prompt">Don't have an account?</span> <button id="auth-switch" type="button">Sign up</button></p>
       </div>
     </section>
     <div class="app-shell" hidden>
