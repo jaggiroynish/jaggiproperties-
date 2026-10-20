@@ -1,201 +1,199 @@
-/* Share actual property photos through the device share sheet.
- * Existing local property data and the private Supabase bucket are unchanged.
- * A website cannot force WhatsApp to select a specific contact or silently send media.
+/* WhatsApp-only property sharing for Jaggi Properties.
+ * Browsers cannot silently attach media to a specific WhatsApp chat.
+ * This opens the selected customer's chat and prepares actual image files
+ * for clipboard paste (when supported) or manual attachment.
  */
 (() => {
-  const originalOpenProperty = openProperty;
-  const phonePattern = /^[6-9]\d{9}$/;
+  const previousOpenProperty = openProperty;
+  const indianMobile = /^[6-9]\d{9}$/;
 
-  function messageFor(p) {
-    const parts = [
-      '🏠 ' + p.title,
-      '📍 Location: ' + p.location,
-      '💰 Price: ' + money(p.price),
-      '📐 Area: ' + (p.area || 'Ask for details'),
-      '🏷️ Status: ' + p.status
+  function propertyText(property) {
+    const lines = [
+      '🏠 Property: ' + property.title,
+      '📍 Location: ' + property.location,
+      '💰 Price: ' + money(property.price),
+      '📐 Area: ' + (property.area || 'Contact for details'),
+      '🏷️ Status: ' + property.status
     ];
-    if (p.beds) parts.push('🛏️ Bedrooms: ' + p.beds);
-    if (p.baths) parts.push('🛁 Bathrooms: ' + p.baths);
-    if (p.description) parts.push('', p.description);
-    parts.push('', 'Jaggi Properties — Contact us for more details.');
-    return parts.join('\n');
+    if (property.beds) lines.push('🛏️ Bedrooms: ' + property.beds);
+    if (property.baths) lines.push('🛁 Bathrooms: ' + property.baths);
+    if (property.description) lines.push('', property.description);
+    lines.push('', 'Jaggi Properties — Contact us for more details.');
+    return lines.join('\n');
   }
 
-  function photoSources(p) {
-    const values = Array.isArray(p.images) && p.images.length ? p.images : [p.image];
-    return values.filter(src => typeof src === 'string' && /^(data:image\/(jpeg|png|webp);base64,|https?:\/\/)/i.test(src));
+  function imageSources(property) {
+    const images = Array.isArray(property.images) && property.images.length
+      ? property.images : [property.image];
+    return images.filter(src => typeof src === 'string' &&
+      /^(data:image\/(jpeg|png|webp);base64,|https?:\/\/)/i.test(src));
   }
 
-  async function fileFromSource(source, index, id) {
-    const response = await fetch(source);
-    if (!response.ok) throw new Error('Cannot fetch property image ' + (index + 1));
-    const blob = await response.blob();
-    if (!blob.type.startsWith('image/')) throw new Error('Image file format not supported');
-    const type = ['image/jpeg', 'image/png', 'image/webp'].includes(blob.type) ? blob.type : 'image/jpeg';
-    const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
-    const safeId = String(id).replace(/[^a-zA-Z0-9_-]/g, '-').slice(0,35);
-    return new File([blob], 'Jaggi-Property-' + safeId + '-' + (index + 1) + '.' + ext, { type });
-  }
-
-  function countryCode() {
+  function getCountryCode() {
     try {
-      const settings = JSON.parse(localStorage.getItem('jaggi-properties-settings') || '{}');
-      return String(settings.countryCode || '91').replace(/\D/g, '') || '91';
-    } catch { return '91'; }
+      const prefs = JSON.parse(localStorage.getItem('jaggi-properties-settings') || '{}');
+      return String(prefs.countryCode || '91').replace(/\D/g, '') || '91';
+    } catch {
+      return '91';
+    }
   }
 
-  function openWhatsApp(phone, message) {
-    if (!phonePattern.test(phone)) {
-      alert('Customer ka valid 10-digit WhatsApp number daalo.');
-      return;
-    }
-    window.open('https://wa.me/' + countryCode() + phone + '?text=' + encodeURIComponent(message), '_blank', 'noopener,noreferrer');
+  function pngFromBlob(blob) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const image = new Image();
+      image.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          canvas.getContext('2d').drawImage(image, 0, 0);
+          canvas.toBlob(result => {
+            URL.revokeObjectURL(url);
+            result ? resolve(result) : reject(new Error('Image conversion failed'));
+          }, 'image/png');
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          reject(error);
+        }
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Unable to read photo'));
+      };
+      image.src = url;
+    });
   }
 
   openProperty = function (id) {
-    originalOpenProperty(id);
-    const p = properties.find(item => item.id === id);
+    previousOpenProperty(id);
+    const property = properties.find(item => item.id === id);
     const box = document.querySelector('#modal-content .share-box');
-    const shareButton = document.querySelector('#share-btn');
-    if (!p || !box || !shareButton) return;
-
-    const message = messageFor(p);
+    const whatsappButton = document.querySelector('#share-btn');
     const phoneInput = document.querySelector('#phone');
-    const sources = photoSources(p);
-    const info = document.createElement('p');
-    info.className = 'photo-share-note';
-    info.textContent = 'Photo + details: phone par WhatsApp aur customer select karo. Mac par photo download karke WhatsApp mein attach karo.';
-    box.append(info);
+    if (!property || !box || !whatsappButton || !phoneInput) return;
+
+    // The link to this localhost page is not useful for external customers.
+    document.querySelector('#copy-link')?.closest('.share-row')?.remove();
+
+    const description = document.createElement('p');
+    description.className = 'photo-share-note';
+    description.textContent = 'Customer ka number daalo. WhatsApp chat seedha khulega. Mac par photo paste karne ke liye ⌘V dabao, phir Send.';
+    box.append(description);
+
     const status = document.createElement('p');
     status.className = 'photo-share-status';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
     box.append(status);
-    const fallback = document.createElement('div');
-    fallback.className = 'photo-share-fallback';
-    box.append(fallback);
 
-    const textButton = document.createElement('button');
-    textButton.type = 'button';
-    textButton.className = 'outline-button';
-    textButton.textContent = 'WhatsApp details only';
-    box.append(textButton);
-    textButton.addEventListener('click', () => openWhatsApp(phoneInput.value.replace(/\D/g, ''), message));
+    const downloadRow = document.createElement('div');
+    downloadRow.className = 'photo-share-fallback';
+    box.append(downloadRow);
 
-    shareButton.textContent = '📷 Share photos + details';
-    shareButton.type = 'button';
-    shareButton.onclick = null;
+    whatsappButton.textContent = 'WhatsApp par bhejo';
+    whatsappButton.type = 'button';
+    whatsappButton.onclick = null;
 
-    function showManualSteps(files) {
-      fallback.replaceChildren();
-      const heading = document.createElement('p');
-      heading.textContent = 'WhatsApp par photo attachment ke liye:';
-      fallback.append(heading);
-      const instructions = document.createElement('p');
-      instructions.textContent = '1. Neeche photo save karo. 2. WhatsApp details kholo. 3. WhatsApp mein photo attach karke Send dabao.';
-      fallback.append(instructions);
-      files.forEach((file, index) => {
-        const anchor = document.createElement('a');
-        anchor.className = 'outline-button';
-        anchor.textContent = '⬇ Download photo ' + (index + 1);
-        const objectUrl = URL.createObjectURL(file);
-        anchor.href = objectUrl;
-        anchor.download = file.name;
-        anchor.addEventListener('click', () => setTimeout(() => URL.revokeObjectURL(objectUrl), 60000), { once: true });
-        fallback.append(anchor);
-      });
-      if (!files.length) {
-        sources.forEach((source, index) => {
-          const anchor = document.createElement('a');
-          anchor.className = 'outline-button';
-          anchor.href = source;
-          anchor.textContent = '↗ Open photo ' + (index + 1) + ' to save';
-          anchor.target = '_blank';
-          anchor.rel = 'noopener noreferrer';
-          fallback.append(anchor);
-        });
-      }
-      const openButton = document.createElement('button');
-      openButton.type = 'button';
-      openButton.className = 'whatsapp';
-      openButton.textContent = 'Open WhatsApp with details';
-      openButton.addEventListener('click', () => openWhatsApp(phoneInput.value.replace(/\D/g, ''), message));
-      fallback.append(openButton);
+    const sources = imageSources(property);
+    const imageFiles = [];
+    let clipboardPng = null;
+    let photosReady = false;
+    const urls = [];
+    function addDownload(blob, index) {
+      const url = URL.createObjectURL(blob);
+      urls.push(url);
+      const link = document.createElement('a');
+      link.className = 'outline-button';
+      link.href = url;
+      link.download = 'Jaggi-Property-' + (index + 1) + '.jpg';
+      link.textContent = 'Download photo ' + (index + 1);
+      downloadRow.append(link);
+    }
+    function addOpenLink(source, index) {
+      const link = document.createElement('a');
+      link.className = 'outline-button';
+      link.href = source;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open photo ' + (index + 1);
+      downloadRow.append(link);
     }
 
-    // Prepare files when the property modal opens. navigator.share must be
-    // called during the user's click itself, before awaiting any async work.
-    let preparedFiles = null;
-    let preparationFailed = false;
-    shareButton.disabled = true;
-    shareButton.textContent = 'Preparing property photos…';
     if (sources.length) {
-      Promise.all(sources.map((source, index) => fileFromSource(source, index, p.id)))
-        .then(files => {
-          preparedFiles = files;
-          status.textContent = 'Photos ready to share. Choose WhatsApp and the customer on your device.';
-        })
-        .catch(error => {
-          preparationFailed = true;
-          console.warn('Could not prepare some property photos:', error);
-          status.textContent = 'Photo attachment preparation failed. Use the photo download/open options below.';
-        })
-        .finally(() => {
-          shareButton.disabled = false;
-          shareButton.textContent = '📷 Share photos + details';
+      status.textContent = 'Photos prepare ho rahi hain…';
+      Promise.all(sources.map(async (source, index) => {
+        try {
+          const response = await fetch(source);
+          if (!response.ok) throw new Error('Download failed');
+          const blob = await response.blob();
+          if (!blob.type.startsWith('image/')) throw new Error('Not an image');
+          return { blob, index };
+        } catch {
+          return { source, index };
+        }
+      })).then(async results => {
+        results.forEach(item => {
+          if (item.blob) {
+            imageFiles.push(item);
+            addDownload(item.blob, item.index);
+          } else {
+            addOpenLink(item.source, item.index);
+          }
         });
+        if (imageFiles.length) {
+          try {
+            const first = imageFiles.find(item => item.index === 0) || imageFiles[0];
+            clipboardPng = await pngFromBlob(first.blob);
+          } catch {
+            clipboardPng = null;
+          }
+        }
+        photosReady = true;
+        status.textContent = clipboardPng
+          ? 'Photo ready hai. WhatsApp kholne ke baad ⌘V dabakar attach karna.'
+          : 'WhatsApp kholkar neeche se photo download/attach karna.';
+      });
     } else {
-      shareButton.disabled = false;
-      shareButton.textContent = '📷 Share photos + details';
+      photosReady = true;
+      status.textContent = 'Is property mein abhi photo nahi hai. WhatsApp par details bhej sakte ho.';
     }
 
-    shareButton.addEventListener('click', () => {
-      if (!sources.length) {
-        status.textContent = 'Is listing mein koi photo available nahi hai.';
+    whatsappButton.addEventListener('click', () => {
+      const phone = phoneInput.value.replace(/\D/g, '');
+      if (!indianMobile.test(phone)) {
+        status.textContent = '10-digit Indian WhatsApp number enter karo.';
+        phoneInput.focus();
         return;
       }
-      const enteredPhone = phoneInput.value.replace(/\D/g, '');
-      if (enteredPhone && !phonePattern.test(enteredPhone)) {
-        status.textContent = 'Phone number 10-digit Indian mobile number hona chahiye.';
-        return;
-      }
-      const files = preparedFiles || [];
-      fallback.replaceChildren();
-      if (!preparationFailed && files.length &&
-          typeof navigator.share === 'function' &&
-          typeof navigator.canShare === 'function' &&
-          navigator.canShare({ files })) {
-        // This must happen synchronously within the click event.
-        navigator.share({ title: p.title, text: message, files })
-          .then(() => {
-            status.textContent = 'Share sheet completed. Confirm that WhatsApp sent the photos and details.';
-          })
-          .catch(error => {
-            if (error.name === 'AbortError') {
-              status.textContent = 'Sharing cancelled.';
-            } else {
-              status.textContent = 'Photo sharing failed on this browser. Use manual attachment below.';
-              showManualSteps(files);
-            }
+      // Request clipboard access in the actual user click (before opening WhatsApp).
+      if (clipboardPng && navigator.clipboard?.write && window.ClipboardItem) {
+        try {
+          const copying = navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': clipboardPng })
+          ]);
+          copying.then(() => {
+            status.textContent = 'Photo clipboard mein copied! WhatsApp chat mein ⌘V dabao aur Send karo.';
+          }).catch(() => {
+            status.textContent = 'WhatsApp mein neeche wali Download photo file manually attach karo.';
           });
+        } catch {
+          status.textContent = 'WhatsApp mein neeche wali Download photo file manually attach karo.';
+        }
+      } else if (!photosReady) {
+        status.textContent = 'Photos abhi prepare ho rahi hain. WhatsApp mein download karke attach kar sakte ho.';
       } else {
-        status.textContent = 'Direct photo sharing is not available in this browser. Please attach the photos manually in WhatsApp.';
-        showManualSteps(files);
+        status.textContent = 'WhatsApp chat mein neeche wali photo download karke attach karo.';
       }
+      const link = 'https://wa.me/' + getCountryCode() + phone +
+        '?text=' + encodeURIComponent(propertyText(property));
+      const popup = window.open(link, '_blank');
+      if (!popup) window.location.href = link;
     });
 
-    const copyDetails = document.createElement('button');
-    copyDetails.type = 'button';
-    copyDetails.className = 'outline-button';
-    copyDetails.textContent = 'Copy full property details';
-    box.append(copyDetails);
-    copyDetails.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(message);
-        status.textContent = 'Property details copied. Paste in WhatsApp if the share sheet omits the caption.';
-      } catch {
-        status.textContent = 'Could not copy details. Use the WhatsApp details button.';
-      }
-    });
+    const dialog = document.querySelector('#property-dialog');
+    dialog.addEventListener('close', () => {
+      urls.forEach(url => URL.revokeObjectURL(url));
+    }, { once: true });
   };
 })();
