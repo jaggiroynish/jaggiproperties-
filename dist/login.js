@@ -6,9 +6,30 @@ const form = document.getElementById('login-form');
 const message = document.getElementById('login-message');
 const submit = form.querySelector('button[type="submit"]');
 const logout = document.getElementById('logout-button');
+const switchButton = document.getElementById('auth-switch');
+const switchPrompt = document.getElementById('auth-switch-prompt');
+const confirmLabel = document.getElementById('signup-confirm-label');
+const confirmInput = document.getElementById('signup-confirm');
+const passwordInput = document.getElementById('login-password');
 let client;
+let signupMode = false;
 
-function notice(text) { message.textContent = text; }
+function notice(text, success = false) {
+  message.textContent = text;
+  message.classList.toggle('success', success);
+}
+function setMode(signup) {
+  signupMode = signup;
+  confirmLabel.hidden = !signup;
+  confirmInput.hidden = !signup;
+  confirmInput.required = signup;
+  confirmInput.value = '';
+  passwordInput.autocomplete = signup ? 'new-password' : 'current-password';
+  submit.textContent = signup ? 'Create account' : 'Sign in';
+  switchPrompt.textContent = signup ? 'Already have an account?' : "Don't have an account?";
+  switchButton.textContent = signup ? 'Sign in' : 'Sign up';
+  notice('');
+}
 function showApp(user) {
   app.hidden = false;
   screen.hidden = true;
@@ -21,42 +42,53 @@ function showLogin() {
   screen.hidden = false;
   logout.hidden = true;
   form.reset();
+  setMode(false);
 }
-try {
-  client = await connectJaggiSupabase();
-  window.jaggiSupabase = client;
-  const { data: { session }, error } = await client.auth.getSession();
-  if (error) throw error;
-  if (session?.user) showApp(session.user);
-  else showLogin();
-  client.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) showApp(session.user);
-    else showLogin();
-  });
-} catch (error) {
-  showLogin();
-  notice('Could not connect to Supabase. Open this website through a local web server or HTTPS, and check your internet connection.');
-  submit.disabled = true;
-  console.error('Jaggi Properties authentication initialization failed:', error);
-}
+
+switchButton.addEventListener('click', () => setMode(!signupMode));
 form.addEventListener('submit', async event => {
   event.preventDefault();
-  if (!client) return;
-  notice('');
-  submit.disabled = true;
-  submit.textContent = 'Signing in…';
+  if (!client) {
+    notice('Connection unavailable. Open this site on localhost or HTTPS.');
+    return;
+  }
   const email = form.elements.email.value.trim();
-  const password = form.elements.password.value;
+  const password = passwordInput.value;
+  if (signupMode) {
+    if (password.length < 8) {
+      notice('Use a password of at least 8 characters.');
+      return;
+    }
+    if (password !== confirmInput.value) {
+      notice('Passwords do not match.');
+      return;
+    }
+  }
+  const creatingAccount = signupMode;
+  submit.disabled = true;
+  submit.textContent = creatingAccount ? 'Creating account…' : 'Signing in…';
+  notice('');
   try {
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    if (!data.user) throw new Error('Login failed. Please try again.');
-    showApp(data.user);
+    if (creatingAccount) {
+      const { data, error } = await client.auth.signUp({ email, password });
+      if (error) throw error;
+      if (data.session?.user) {
+        showApp(data.session.user);
+      } else {
+        showLogin();
+        notice('Please check your email to confirm your account, then sign in.', true);
+      }
+    } else {
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      if (!data.user || !data.session) throw new Error('Sign in did not return a session.');
+      showApp(data.user);
+    }
   } catch (error) {
-    notice(error.message || 'Could not sign in.');
+    notice(error.message || 'Something went wrong. Please try again.');
   } finally {
     submit.disabled = false;
-    submit.textContent = 'Sign in';
+    submit.textContent = signupMode ? 'Create account' : 'Sign in';
   }
 });
 logout.addEventListener('click', async () => {
@@ -66,69 +98,27 @@ logout.addEventListener('click', async () => {
     const { error } = await client.auth.signOut();
     if (error) throw error;
     showLogin();
-    notice('You have signed out.');
+    notice('You have signed out.', true);
   } catch (error) {
-    alert('Sign out failed: ' + error.message);
+    notice(error.message || 'Sign out failed.');
   } finally {
     logout.disabled = false;
   }
 });
 
-const switchButton = document.createElement('button');
-switchButton.type = 'button';
-switchButton.id = 'auth-switch';
-switchButton.textContent = 'Create an account';
-const switchPrompt = document.createElement('span');
-switchPrompt.textContent = 'New here? ';
-const switchRow = document.createElement('p');
-switchRow.className = 'login-help';
-switchRow.append(switchPrompt, switchButton);
-form.after(switchRow);
-const confirmLabel = document.createElement('label');
-confirmLabel.htmlFor = 'signup-confirm';
-confirmLabel.textContent = 'Confirm password';
-const confirmInput = document.createElement('input');
-confirmInput.id = 'signup-confirm';
-confirmInput.type = 'password';
-confirmInput.autocomplete = 'new-password';
-confirmInput.placeholder = 'Re-enter password';
-const passwordInput = form.querySelector('[name="password"]');
-passwordInput.after(confirmLabel, confirmInput);
-let signupMode = false;
-function setSignupMode(enabled) {
-  signupMode = enabled;
-  confirmLabel.hidden = !enabled;
-  confirmInput.hidden = !enabled;
-  confirmInput.required = enabled;
-  submit.textContent = enabled ? 'Create account' : 'Sign in';
-  switchPrompt.textContent = enabled ? 'Already have an account? ' : 'New here? ';
-  switchButton.textContent = enabled ? 'Sign in' : 'Create an account';
-  notice('');
+try {
+  client = await connectJaggiSupabase();
+  window.jaggiSupabase = client;
+  const { data: { session }, error } = await client.auth.getSession();
+  if (error) throw error;
+  if (session?.user) showApp(session.user);
+  else showLogin();
+  client.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) showApp(session.user);
+    else if (screen.hidden) showLogin();
+  });
+} catch (error) {
+  showLogin();
+  notice('Could not connect to Supabase. Please use localhost or HTTPS and check your internet.');
+  console.error('Jaggi Properties authentication initialization failed:', error);
 }
-setSignupMode(false);
-switchButton.addEventListener('click', () => setSignupMode(!signupMode));
-form.addEventListener('submit', async event => {
-  if (!signupMode) return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
-  if (!client) return;
-  const email = form.elements.email.value.trim();
-  const password = form.elements.password.value;
-  if (password.length < 8) { notice('Use a password with at least 8 characters.'); return; }
-  if (password !== confirmInput.value) { notice('Passwords do not match.'); return; }
-  submit.disabled = true;
-  submit.textContent = 'Creating account…';
-  try {
-    const { data, error } = await client.auth.signUp({ email, password });
-    if (error) throw error;
-    if (data.session?.user) showApp(data.session.user);
-    else {
-      setSignupMode(false);
-      notice('Account created. Check your email for a confirmation link, then sign in.');
-    }
-  } catch (error) { notice(error.message || 'Could not create account.'); }
-  finally {
-    submit.disabled = false;
-    submit.textContent = signupMode ? 'Create account' : 'Sign in';
-  }
-}, true);
