@@ -154,7 +154,7 @@
         status.textContent = 'Is listing mein koi photo available nahi hai.';
         return;
       }
-      const enteredPhone = phoneInput.value.replace(/\\D/g, '');
+      const enteredPhone = phoneInput.value.replace(/\D/g, '');
       if (enteredPhone && !phonePattern.test(enteredPhone)) {
         status.textContent = 'Phone number 10-digit Indian mobile number hona chahiye.';
         return;
