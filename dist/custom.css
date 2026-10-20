@@ -8,3 +8,24 @@
 .nav-heading{margin:13px 13px 1px;color:#ddfff5;font-size:9px;font-weight:700;letter-spacing:1.1px}.category-link span{opacity:.9}
 @media(max-width:850px){.app-shell{display:block}.sidebar{display:none}main{padding:20px 16px 92px}header{padding:23px 20px;border-radius:18px;display:block}header .primary{margin-top:17px}h1{font-size:28px}.stats{grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0 28px}.stat{padding:14px 12px;border-radius:14px}.stat-num{font-size:23px}.stat-label{font-size:10px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{border-radius:15px}.card-image{height:145px}.card-body{padding:13px}.card h3{font-size:14px}.price{font-size:15px}.details,.location{font-size:10px}.mobile-nav{display:flex;position:fixed;z-index:6;bottom:0;left:0;right:0;height:68px;background:#fff;border-radius:20px 20px 0 0;box-shadow:0 -5px 24px #1d4a5620;justify-content:space-around;align-items:center;padding:0 15px}.mobile-nav button{border:0;background:transparent;color:#91a0a8;font:600 10px 'DM Sans',sans-serif;display:grid;gap:3px;place-items:center;min-width:54px;cursor:pointer}.mobile-nav button span{font-size:18px;line-height:1}.mobile-nav button.active{color:#25c39e}.mobile-nav .mobile-add{display:grid;place-items:center;background:#35d5ab;color:#fff;border-radius:50%;width:48px;height:48px;font-size:30px;font-weight:300;line-height:1;box-shadow:0 7px 16px #26b89466;transform:translateY(-13px)}.app-panel{margin-top:4px}.share-item{padding:15px}.form-grid{gap:10px}.modal{border-radius:18px}}
 @media(max-width:440px){.grid{grid-template-columns:1fr}.card-image{height:185px}.stats{grid-template-columns:repeat(3,1fr)}.stat{padding:12px 9px}.stat-num{font-size:20px}.stat-label{line-height:1.25}.filters select{flex:1;min-width:0}.search{width:100%;flex-basis:100%}}
+
+
+/* Admin login portal and bottom-anchored profile */
+.app-shell[hidden],.login-screen[hidden],[hidden]{display:none!important}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 15%,#b6ffeb 0%,transparent 38%),linear-gradient(140deg,#e9fff7,#f4f8f9)}
+.login-card{width:min(440px,100%);padding:40px 36px;border-radius:24px;background:#fff;box-shadow:0 25px 65px #124a3c1c}
+.login-logo{display:grid;place-items:center;width:56px;height:56px;border-radius:17px;background:#35d5ab;color:white;font-size:36px;margin-bottom:22px}
+.login-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.7px;color:#23b994}
+.login-card h1{font-family:'DM Sans',sans-serif;font-size:32px;letter-spacing:-1px;margin:8px 0}
+.login-subtitle{color:#748591;font-size:14px;line-height:1.5;margin-bottom:27px}
+.login-card label{display:block;font-size:12px;font-weight:700;margin:17px 0 7px;color:#405462}
+.login-card input{width:100%;padding:13px 14px;border:1px solid #dae9e5;border-radius:11px;font:inherit;outline-color:#35d5ab}
+.login-card form button{margin-top:12px;width:100%;padding:14px;border:0;border-radius:11px;background:#30cda5;color:#fff;font:700 14px 'DM Sans',sans-serif;cursor:pointer}
+.login-card form button:disabled{opacity:.6;cursor:wait}
+#login-message{color:#b03b3b;font-size:12px;line-height:1.5;min-height:16px}
+.login-help{color:#8a999c;font-size:11px;text-align:center;margin-top:22px}
+.sidebar .sidebar-note{margin-top:auto;padding:20px 9px 12px;border-top:1px solid #ffffff80;flex-wrap:wrap}
+.sidebar nav{margin-top:24px}
+.logout-button{border:1px solid #ffffff70;background:#ffffff24;color:white;border-radius:8px;padding:7px 10px;font:600 11px 'DM Sans',sans-serif;cursor:pointer;margin-left:auto}
+.sidebar-note small{overflow-wrap:anywhere;max-width:145px}
+@media(max-width:540px){.login-card{padding:30px 23px}}
