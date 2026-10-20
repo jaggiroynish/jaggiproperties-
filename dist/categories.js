@@ -5,18 +5,37 @@
   const purposeLabel = document.createElement('label');
   purposeLabel.innerHTML = 'Listing purpose<select name="purpose"><option value="Sale">For sale</option><option value="Rent">For rent</option></select>';
   statusLabel.before(purposeLabel);
+  const areaInput = form.querySelector('[name="area"]');
+  areaInput.closest('label').firstChild.textContent = 'Size / Area ';
+  areaInput.placeholder = 'e.g. 150 Sq. Yards';
+  areaInput.required = true;
+
+  const sizeFilter = document.createElement('select');
+  sizeFilter.id = 'size-filter';
+  sizeFilter.setAttribute('aria-label', 'Filter by size');
+  document.querySelector('#type-filter').after(sizeFilter);
+  function refreshSizeOptions() {
+    const selected = sizeFilter.value;
+    const sizes = [...new Set(properties.map(p => p.area).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, {numeric:true}));
+    sizeFilter.innerHTML = `<option value="">All sizes</option>${sizes.map(size => `<option value="${esc(size)}">${esc(size)}</option>`).join('')}`;
+    if (sizes.includes(selected)) sizeFilter.value = selected;
+  }
 
   visible = () => {
     const q = search.value.toLowerCase();
     return properties.filter(p =>
       (!q || `${p.title} ${p.location}`.toLowerCase().includes(q)) &&
       (!typeFilter.value || p.type === typeFilter.value) &&
+      (!sizeFilter.value || p.area === sizeFilter.value) &&
       (!statusFilter.value || p.status === statusFilter.value) &&
       (!activePurpose || (p.purpose || 'Sale') === activePurpose)
     );
   };
 
-  const resetCategory = () => { activePurpose = ''; typeFilter.value = ''; };
+  const baseRender = render;
+  render = () => { refreshSizeOptions(); baseRender(); };
+  sizeFilter.addEventListener('input', render);
+  const resetCategory = () => { activePurpose = ''; typeFilter.value = ''; sizeFilter.value = ''; };
   document.querySelector('#clear-filters').addEventListener('click', resetCategory, true);
   document.querySelector('.brand').addEventListener('click', () => { resetCategory(); render(); }, true);
   document.querySelector('a[href="#inventory"]').addEventListener('click', () => { resetCategory(); render(); }, true);
@@ -24,7 +43,7 @@
     event.preventDefault(); event.stopImmediatePropagation();
     activePurpose = link.dataset.purpose || '';
     typeFilter.value = link.dataset.type || '';
-    statusFilter.value = ''; search.value = '';
+    sizeFilter.value = ''; statusFilter.value = ''; search.value = '';
     document.querySelectorAll('.nav-link').forEach(item => item.classList.toggle('active', item === link));
     document.querySelector('header').classList.remove('is-hidden');
     document.querySelector('#stats').classList.remove('is-hidden');
@@ -33,4 +52,5 @@
     document.querySelector('#settings').classList.add('is-hidden');
     render();
   }, true));
+  render();
 })();
