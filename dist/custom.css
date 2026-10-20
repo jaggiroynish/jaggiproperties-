@@ -34,3 +34,11 @@
 .login-help #auth-switch{appearance:none;border:0;background:transparent;color:#17a988;font:700 12px 'DM Sans',sans-serif;cursor:pointer;padding:3px}
 .login-help #auth-switch:hover{text-decoration:underline}
 #login-message.success{color:#16876a}
+
+/* Interactive property summary cards */
+.stats .stat{font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease,outline-color .15s ease}
+.stats .stat:hover{transform:translateY(-3px);box-shadow:0 10px 26px #1259441a}
+.stats .stat:focus-visible{outline:3px solid #158b72;outline-offset:3px}
+.stats .stat[aria-pressed="true"]{outline:2px solid #30cda5;outline-offset:2px}
+.stats .stat:first-child{color:#fff}
+.stats .stat:first-child[aria-pressed="true"]{outline-color:#30cda5}
