@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#11261d" />
+    <title>PropertyDesk — Inventory</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#"><span class="brand-mark">⌂</span><span>Property<span>Desk</span></span></a>
+        <nav>
+          <a class="nav-link active" href="#inventory"><span>▦</span> Inventory</a>
+          <a class="nav-link" href="#shared"><span>↗</span> Shared links</a>
+          <a class="nav-link" href="#settings"><span>⚙</span> Settings</a>
+        </nav>
+        <div class="sidebar-note"><span class="avatar">RJ</span><div><b>Roynish Jaggi</b><small>Administrator</small></div></div>
+      </aside>
+      <main>
+        <header><div><p class="eyebrow">PROPERTY INVENTORY</p><h1>Your properties, <em>beautifully organized.</em></h1><p class="subhead">Manage listings and share the right home with the right buyer in seconds.</p></div><button class="primary add-trigger">+ Add property</button></header>
+        <section class="stats" id="stats"></section>
+        <section class="inventory" id="inventory">
+          <div class="section-top"><div><h2>All properties</h2><p id="result-count">Loading properties...</p></div><button class="text-button" id="clear-filters">Clear filters</button></div>
+          <div class="filters"><label class="search"><span>⌕</span><input id="search" placeholder="Search location or property" /></label><select id="type-filter"><option value="">All types</option><option>House</option><option>Flat</option><option>Plot</option><option>Shop</option></select><select id="status-filter"><option value="">Any status</option><option>Available</option><option>Sold</option><option>On hold</option></select></div>
+          <div class="grid" id="property-grid"></div>
+        </section>
+      </main>
+    </div>
+    <dialog id="property-dialog"><form method="dialog" class="modal"><button class="close" value="cancel">×</button><div id="modal-content"></div></form></dialog>
+    <dialog id="add-dialog"><form id="property-form" class="modal form-modal"><button class="close" value="cancel" type="button" data-close="add-dialog">×</button><p class="eyebrow">NEW LISTING</p><h2>Add a property</h2><div class="form-grid"><label>Property title<input required name="title" placeholder="e.g. 3 BHK Independent House" /></label><label>Type<select required name="type"><option>House</option><option>Flat</option><option>Plot</option><option>Shop</option></select></label><label>Location<input required name="location" placeholder="Area, City" /></label><label>Price (₹)<input required name="price" type="number" min="0" placeholder="8500000" /></label><label>Area<input required name="area" placeholder="150 Sq. Yards" /></label><label>Status<select name="status"><option>Available</option><option>On hold</option><option>Sold</option></select></label><label>Bedrooms<input name="beds" type="number" min="0" value="0" /></label><label>Bathrooms<input name="baths" type="number" min="0" value="0" /></label><label class="full">Photo URL <input name="image" type="url" placeholder="https://..." /></label><label class="full">Description<textarea name="description" placeholder="A short description of this property"></textarea></label></div><button class="primary full-button">Save property</button></form></dialog>
+    <script src="./app.js"></script>
+  </body>
+</html>
