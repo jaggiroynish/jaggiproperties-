@@ -42,3 +42,16 @@
 .stats .stat[aria-pressed="true"]{outline:2px solid #30cda5;outline-offset:2px}
 .stats .stat:first-child{color:#fff}
 .stats .stat:first-child[aria-pressed="true"]{outline-color:#30cda5}
+
+/* Sharing original property images as files with WhatsApp */
+.photo-share-note{margin:12px 0 6px;color:#54736b;font-size:12px;line-height:1.6}
+.photo-share-status{font-size:12px;line-height:1.5;color:#247e69;min-height:16px}
+.share-box #share-btn{min-height:42px;padding:10px 16px;white-space:normal}
+.share-box #share-btn:disabled{opacity:.6;cursor:wait}
+.share-box>.outline-button{margin-top:9px;margin-right:9px}
+.photo-share-fallback{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0 0;padding:12px;background:#fff;border-radius:12px}
+.photo-share-fallback:empty{display:none}
+.photo-share-fallback p{flex-basis:100%;margin:0;color:#405a55;font-size:12px;line-height:1.5}
+.photo-share-fallback .outline-button{display:inline-flex;align-items:center;text-decoration:none;white-space:normal}
+.photo-share-fallback .whatsapp{padding:9px 13px;min-height:37px}
+@media(max-width:540px){.share-box>.outline-button{width:100%}.photo-share-fallback .outline-button,.photo-share-fallback .whatsapp{width:100%;justify-content:center}}
