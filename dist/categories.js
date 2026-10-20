@@ -49,9 +49,34 @@
   };
 
   const baseRender = render;
-  render = () => { refreshSizeOptions(); baseRender(); };
+  render = () => {
+    refreshSizeOptions();
+    baseRender();
+    const otherFilters = Boolean(search.value.trim() || typeFilter.value || sizeFilter.value || activePurpose);
+    stats.querySelectorAll('[data-stat-filter]').forEach(button => {
+      const active = !otherFilters && button.dataset.statFilter === statusFilter.value;
+      button.setAttribute('aria-pressed', String(active));
+    });
+  };
   sizeFilter.addEventListener('input', render);
   const resetCategory = () => { activePurpose = ''; typeFilter.value = ''; sizeFilter.value = ''; };
+
+  stats.addEventListener('click', event => {
+    const button = event.target.closest('button[data-stat-filter]');
+    if (!button) return;
+    const selectedStatus = button.dataset.statFilter;
+    resetCategory();
+    search.value = '';
+    statusFilter.value = selectedStatus;
+    document.querySelectorAll('.nav-link').forEach(link =>
+      link.classList.toggle('active', link.getAttribute('href') === '#inventory')
+    );
+    render();
+    stats.querySelectorAll('[data-stat-filter]').forEach(card => {
+      if (card.dataset.statFilter === selectedStatus) card.focus({ preventScroll: true });
+    });
+    document.querySelector('#inventory').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   document.querySelector('#clear-filters').addEventListener('click', resetCategory, true);
   document.querySelector('.brand').addEventListener('click', () => { resetCategory(); render(); }, true);
   document.querySelector('a[href="#inventory"]').addEventListener('click', () => { resetCategory(); render(); }, true);
