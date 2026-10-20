@@ -12,6 +12,10 @@
   sharePanel.innerHTML = '<div class="section-top"><div><p class="eyebrow">CUSTOMER SHARING</p><h2>Shared property links</h2><p>Copy a listing link or open it directly for a customer.</p></div></div><div id="share-list" class="share-list"></div>';
   settingsPanel.innerHTML = '<div class="section-top"><div><p class="eyebrow">BUSINESS SETTINGS</p><h2>Make it yours</h2><p>These settings are saved on this device.</p></div></div><form id="settings-form" class="settings-card"><label>Business name<input name="name" maxlength="45" required></label><label>WhatsApp country code<input name="countryCode" inputmode="numeric" maxlength="3" required></label><p class="settings-help">For India, keep the country code as 91. This is used when opening WhatsApp messages.</p><div class="settings-actions"><button class="primary" type="submit">Save changes</button><button class="text-button" type="button" id="export-data">Download backup</button></div><p class="save-state" id="save-state" aria-live="polite"></p></form>';
   main.append(sharePanel, settingsPanel);
+  const mobileNav = document.createElement('nav');
+  mobileNav.className = 'mobile-nav';
+  mobileNav.innerHTML = '<button type="button" data-view="inventory"><span>⌂</span>Home</button><button type="button" data-view="shared"><span>↗</span>Share</button><button type="button" class="mobile-add" aria-label="Add property">+</button><button type="button" data-view="settings"><span>⚙</span>Settings</button></nav>';
+  document.body.append(mobileNav);
 
   const linkFor = p => `${location.href.split('#')[0]}#property=${encodeURIComponent(p.id)}`;
   const copyText = async (text, button) => {
@@ -30,10 +34,13 @@
     header.classList.toggle('is-hidden', !showingInventory); stats.classList.toggle('is-hidden', !showingInventory); inventory.classList.toggle('is-hidden', !showingInventory);
     sharePanel.classList.toggle('is-hidden', view !== 'shared'); settingsPanel.classList.toggle('is-hidden', view !== 'settings');
     document.querySelectorAll('.nav-link').forEach(link => link.classList.toggle('active', link.getAttribute('href') === `#${view}`));
+    mobileNav.querySelectorAll('[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === view));
     if (view === 'shared') renderSharedLinks();
     if (view === 'settings') { const form = document.querySelector('#settings-form'); form.elements.name.value = settings.name; form.elements.countryCode.value = settings.countryCode; }
   }
   document.querySelectorAll('.nav-link').forEach(link => link.addEventListener('click', event => { event.preventDefault(); showView(link.getAttribute('href').slice(1)); }));
+  mobileNav.querySelectorAll('[data-view]').forEach(button => button.onclick = () => showView(button.dataset.view));
+  mobileNav.querySelector('.mobile-add').onclick = () => document.querySelector('#add-dialog').showModal();
   document.querySelector('.brand').addEventListener('click', event => { event.preventDefault(); showView('inventory'); window.scrollTo({top:0, behavior:'smooth'}); });
 
   document.querySelector('#settings-form').onsubmit = event => {
