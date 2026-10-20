@@ -123,46 +123,78 @@
       fallback.append(openButton);
     }
 
-    shareButton.addEventListener('click', async () => {
+    // Prepare files when the property modal opens. navigator.share must be
+    // called during the user's click itself, before awaiting any async work.
+    let preparedFiles = null;
+    let preparationFailed = false;
+    shareButton.disabled = true;
+    shareButton.textContent = 'Preparing property photos…';
+    if (sources.length) {
+      Promise.all(sources.map((source, index) => fileFromSource(source, index, p.id)))
+        .then(files => {
+          preparedFiles = files;
+          status.textContent = 'Photos ready to share. Choose WhatsApp and the customer on your device.';
+        })
+        .catch(error => {
+          preparationFailed = true;
+          console.warn('Could not prepare some property photos:', error);
+          status.textContent = 'Photo attachment preparation failed. Use the photo download/open options below.';
+        })
+        .finally(() => {
+          shareButton.disabled = false;
+          shareButton.textContent = '📷 Share photos + details';
+        });
+    } else {
+      shareButton.disabled = false;
+      shareButton.textContent = '📷 Share photos + details';
+    }
+
+    shareButton.addEventListener('click', () => {
       if (!sources.length) {
         status.textContent = 'Is listing mein koi photo available nahi hai.';
         return;
       }
-      const enteredPhone = phoneInput.value.replace(/\D/g, '');
+      const enteredPhone = phoneInput.value.replace(/\\D/g, '');
       if (enteredPhone && !phonePattern.test(enteredPhone)) {
         status.textContent = 'Phone number 10-digit Indian mobile number hona chahiye.';
         return;
       }
-      shareButton.disabled = true;
-      shareButton.textContent = 'Preparing property photos…';
-      status.textContent = 'Photos ready ki ja rahi hain…';
+      const files = preparedFiles || [];
       fallback.replaceChildren();
-      const files = [];
-      try {
-        for (const [index, source] of sources.entries()) {
-          files.push(await fileFromSource(source, index, p.id));
-        }
-        if (typeof navigator.share === 'function' &&
-            typeof navigator.canShare === 'function' &&
-            navigator.canShare({ files })) {
-          try {
-            await navigator.share({ title: p.title, text: message, files });
-            status.textContent = 'Share sheet closed. WhatsApp mein send confirm karna zaroori hai.';
-          } catch (error) {
-            status.textContent = error.name === 'AbortError' ? 'Sharing cancelled.' : 'Sharing failed; manual option available below.';
-            if (error.name !== 'AbortError') showManualSteps(files);
-          }
-        } else {
-          status.textContent = 'Is browser mein WhatsApp photo share sheet supported nahi hai. Neeche manual attachment steps hain.';
-          showManualSteps(files);
-        }
-      } catch (error) {
-        status.textContent = 'Photo directly share nahi ho paayi. Photos ko save karke manually attach karo.';
+      if (!preparationFailed && files.length &&
+          typeof navigator.share === 'function' &&
+          typeof navigator.canShare === 'function' &&
+          navigator.canShare({ files })) {
+        // This must happen synchronously within the click event.
+        navigator.share({ title: p.title, text: message, files })
+          .then(() => {
+            status.textContent = 'Share sheet completed. Confirm that WhatsApp sent the photos and details.';
+          })
+          .catch(error => {
+            if (error.name === 'AbortError') {
+              status.textContent = 'Sharing cancelled.';
+            } else {
+              status.textContent = 'Photo sharing failed on this browser. Use manual attachment below.';
+              showManualSteps(files);
+            }
+          });
+      } else {
+        status.textContent = 'Direct photo sharing is not available in this browser. Please attach the photos manually in WhatsApp.';
         showManualSteps(files);
-        console.warn('Property photo share:', error);
-      } finally {
-        shareButton.disabled = false;
-        shareButton.textContent = '📷 Share photos + details';
+      }
+    });
+
+    const copyDetails = document.createElement('button');
+    copyDetails.type = 'button';
+    copyDetails.className = 'outline-button';
+    copyDetails.textContent = 'Copy full property details';
+    box.append(copyDetails);
+    copyDetails.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(message);
+        status.textContent = 'Property details copied. Paste in WhatsApp if the share sheet omits the caption.';
+      } catch {
+        status.textContent = 'Could not copy details. Use the WhatsApp details button.';
       }
     });
   };
