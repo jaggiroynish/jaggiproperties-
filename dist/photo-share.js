@@ -73,6 +73,8 @@
     const phoneInput = document.querySelector('#phone');
     if (!property || !box || !whatsappButton || !phoneInput) return;
 
+    box.querySelector('b').textContent = 'WhatsApp par property share karein';
+
     // The link to this localhost page is not useful for external customers.
     document.querySelector('#copy-link')?.closest('.share-row')?.remove();
 
@@ -106,7 +108,8 @@
       const link = document.createElement('a');
       link.className = 'outline-button';
       link.href = url;
-      link.download = 'Jaggi-Property-' + (index + 1) + '.jpg';
+      const ext = blob.type === 'image/png' ? '.png' : blob.type === 'image/webp' ? '.webp' : '.jpg';
+      link.download = 'Jaggi-Property-' + (index + 1) + ext;
       link.textContent = 'Download photo ' + (index + 1);
       downloadRow.append(link);
     }
