@@ -14,6 +14,7 @@
   sizeFilter.id = 'size-filter';
   sizeFilter.setAttribute('aria-label', 'Filter by size');
   document.querySelector('#type-filter').after(sizeFilter);
+  typeFilter.insertAdjacentHTML('beforeend', '<option value="Rent">Rent</option>');
   function refreshSizeOptions() {
     const selected = sizeFilter.value;
     const sizes = [...new Set(properties.map(p => p.area).filter(Boolean))].sort((a, b) => a.localeCompare(b, undefined, {numeric:true}));
@@ -25,7 +26,7 @@
     const q = search.value.toLowerCase();
     return properties.filter(p =>
       (!q || `${p.title} ${p.location}`.toLowerCase().includes(q)) &&
-      (!typeFilter.value || p.type === typeFilter.value) &&
+      (!typeFilter.value || (typeFilter.value === 'Rent' ? (p.purpose || 'Sale') === 'Rent' : p.type === typeFilter.value)) &&
       (!sizeFilter.value || p.area === sizeFilter.value) &&
       (!statusFilter.value || p.status === statusFilter.value) &&
       (!activePurpose || (p.purpose || 'Sale') === activePurpose)
