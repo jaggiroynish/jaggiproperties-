@@ -6,9 +6,24 @@
   purposeLabel.innerHTML = 'Listing purpose<select name="purpose"><option value="Sale">For sale</option><option value="Rent">For rent</option></select>';
   statusLabel.before(purposeLabel);
   const areaInput = form.querySelector('[name="area"]');
-  areaInput.closest('label').firstChild.textContent = 'Size / Area ';
-  areaInput.placeholder = 'e.g. 150 Sq. Yards';
+  areaInput.closest('label').firstChild.textContent = 'Size (Gaj) ';
+  areaInput.placeholder = 'e.g. 150';
+  areaInput.inputMode = 'numeric';
+  areaInput.pattern = '[0-9]*';
   areaInput.required = true;
+  form.addEventListener('submit', () => {
+    const number = areaInput.value.trim().replace(/\s*gaj$/i, '');
+    if (/^\d+(\.\d+)?$/.test(number)) areaInput.value = `${number} Gaj`;
+  }, true);
+
+  let converted = false;
+  properties.forEach(property => {
+    const number = Number(String(property.area || '').replace(/[^\d.]/g, ''));
+    if (!Number.isFinite(number)) return;
+    if (/sq\.?\s*ft/i.test(property.area)) { property.area = `${Math.round(number / 9)} Gaj`; converted = true; }
+    if (/sq\.?\s*yards?/i.test(property.area)) { property.area = `${number} Gaj`; converted = true; }
+  });
+  if (converted) save();
 
   const sizeFilter = document.createElement('select');
   sizeFilter.id = 'size-filter';
